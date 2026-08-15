@@ -4,13 +4,15 @@ import { FiMail, FiLock, FiArrowRight } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 
 function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const { login } = useAuth();
-  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,19 +25,22 @@ function Login() {
     setLoading(false);
 
     if (result.success) {
+      // Login successful
       navigate("/dashboard");
     } else {
+      // Login failed
       setError(result.message);
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
+
       <div className="w-full max-w-md">
 
         <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-8">
 
-          {/* Heading */}
+          {/* Logo */}
           <div className="text-center mb-8">
 
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-3xl shadow-lg">
@@ -52,9 +57,9 @@ function Login() {
 
           </div>
 
-          {/* Error Message */}
+          {/* Error message */}
           {error && (
-            <div className="mb-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               {error}
             </div>
           )}
@@ -64,6 +69,7 @@ function Login() {
 
             {/* Email */}
             <div>
+
               <label
                 htmlFor="email"
                 className="mb-2 block text-sm font-semibold text-slate-700"
@@ -86,6 +92,7 @@ function Login() {
                 />
 
               </div>
+
             </div>
 
             {/* Password */}
@@ -127,7 +134,7 @@ function Login() {
 
             </div>
 
-            {/* Login Button */}
+            {/* Login button */}
             <button
               type="submit"
               disabled={loading}
@@ -136,6 +143,7 @@ function Login() {
               {loading ? "Logging in..." : "Login"}
 
               {!loading && <FiArrowRight />}
+
             </button>
 
           </form>
@@ -157,6 +165,7 @@ function Login() {
         </div>
 
       </div>
+
     </div>
   );
 }
