@@ -1,1 +1,88 @@
 @import "tailwindcss";
+
+/* Project design tokens used throughout the commuter-facing pages. */
+@theme {
+  --color-ink-50: #f4f7fb;
+  --color-ink-100: #dce4ef;
+  --color-ink-300: #9aabc0;
+  --color-ink-500: #52657d;
+  --color-ink-700: #263952;
+  --color-ink-900: #10233e;
+  --color-ink-950: #08162a;
+
+  --color-paper: #f8fafc;
+  --color-paper-100: #ffffff;
+  --color-paper-200: #e8edf4;
+
+  --color-micro-50: #edf8f8;
+  --color-micro-100: #c9ebeb;
+  --color-micro-600: #087e8b;
+  --color-micro-700: #056571;
+
+  --color-marigold-50: #fff8e7;
+  --color-marigold-100: #f9e7ad;
+  --color-marigold-400: #f9bf3b;
+  --color-marigold-500: #edaa16;
+  --color-marigold-700: #9a5b00;
+
+  --color-brick-600: #c84c35;
+
+  /* Re-map the older screens' blue UI to the shared teal/navy brand palette. */
+  --color-blue-50: #edf8f8;
+  --color-blue-100: #c9ebeb;
+  --color-blue-200: #9cdbdc;
+  --color-blue-500: #1198a4;
+  --color-blue-600: #087e8b;
+  --color-blue-700: #056571;
+  --color-blue-800: #064f59;
+  --color-indigo-700: #10233e;
+  --color-indigo-800: #08162a;
+  --font-display: "Trebuchet MS", "Segoe UI", sans-serif;
+  --shadow-card: 0 12px 28px rgb(16 35 62 / 10%);
+}
+
+@layer base {
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink-900);
+  }
+}
+
+@layer components {
+  .ticket-stub {
+    border: 1px solid var(--color-ink-100);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-card);
+  }
+
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    opacity: .18;
+    background-image: linear-gradient(rgb(255 255 255 / 12%) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 12%) 1px, transparent 1px);
+    background-size: 42px 42px;
+  }
+
+  .hero-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(2px);
+    opacity: .38;
+  }
+
+  .hero-orb-one {
+    top: -9rem;
+    right: -5rem;
+    width: 24rem;
+    height: 24rem;
+    background: var(--color-micro-600);
+  }
+
+  .hero-orb-two {
+    bottom: -11rem;
+    left: -6rem;
+    width: 26rem;
+    height: 26rem;
+    background: var(--color-marigold-500);
+  }
+}

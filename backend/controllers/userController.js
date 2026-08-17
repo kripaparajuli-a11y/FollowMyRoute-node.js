@@ -19,6 +19,17 @@ const getAllUsers = async (req, res) => {
 
 const getUserById = async (req, res) => {
   try {
+    // A user can only view their own profile, unless they're an admin.
+    const isSelf = req.user.id === req.params.id;
+    const isAdmin = req.user.role === "admin";
+
+    if (!isSelf && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only view your own profile",
+      });
+    }
+
     const user = await userService.getUserById(
       req.params.id
     );
@@ -44,6 +55,37 @@ const getUserById = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
+    // A user can only update their own profile, unless they're an admin.
+    // (Without this check, any logged-in user could edit anyone's
+    // account just by knowing their user ID.)
+    const isSelf = req.user.id === req.params.id;
+    const isAdmin = req.user.role === "admin";
+
+    if (!isSelf && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only update your own profile",
+      });
+    }
+
+    // Only admins may change roles
+    if (!isAdmin) {
+      delete req.body.role;
+    }
+
+    if (req.body.email !== undefined) {
+      const email = String(req.body.email).trim().toLowerCase();
+
+      if (!/^\S+@\S+\.\S+$/.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: "Please provide a valid email address",
+        });
+      }
+
+      req.body.email = email;
+    }
+
     const user = await userService.updateUser(
       req.params.id,
       req.body
@@ -64,7 +106,7 @@ const updateUser = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: error.message,
+      message: error.code === 11000 ? "That email address is already in use" : error.message,
     });
   }
 };

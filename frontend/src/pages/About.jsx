@@ -33,31 +33,32 @@ function About() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-paper">
 
       {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
+      <section className="relative overflow-hidden bg-ink-950">
 
-        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10" />
-        <div className="absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-white/5" />
+        <div className="hero-orb hero-orb-one" />
+        <div className="hero-orb hero-orb-two" />
+        <div className="hero-grid" />
 
         <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
 
           <div className="max-w-3xl">
 
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-marigold-500/30 bg-marigold-500/15 px-4 py-2 text-sm font-medium text-marigold-400">
               <FaBus />
               About FollowMyRoute
             </div>
 
             <h1 className="text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
               Making everyday
-              <span className="block text-blue-200">
+              <span className="block text-marigold-400">
                 journeys simpler.
               </span>
             </h1>
 
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-blue-100">
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-paper-200">
               FollowMyRoute helps passengers discover bus routes, compare
               fares and plan their journeys across Kathmandu with ease.
             </p>
@@ -124,7 +125,7 @@ function About() {
           {/* VISUAL CARD */}
           <div className="relative">
 
-            <div className="rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 p-8 shadow-2xl shadow-blue-200">
+            <div className="rounded-3xl bg-linear-to-br from-blue-600 to-indigo-700 p-8 shadow-2xl shadow-blue-200">
 
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 text-white">
                 <FaBus className="text-3xl" />
@@ -228,7 +229,7 @@ function About() {
       {/* CTA */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
 
-        <div className="rounded-3xl bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-12 text-center sm:px-12">
+        <div className="rounded-3xl bg-linear-to-r from-slate-900 to-slate-800 px-6 py-12 text-center sm:px-12">
 
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white">
             <FaBus className="text-2xl" />

@@ -11,6 +11,7 @@ const {
 
 const {
   protect,
+  optionalAuth,
   authorize,
 } = require("../middleware/authMiddleware");
 
@@ -22,7 +23,9 @@ router.get("/search", searchRoutes);
 
 
 // Get all routes
-router.get("/", getAllRoutes);
+// Guests and normal users only receive active routes. Admins receive every
+// route so they can also edit/deactivate entries from the management screen.
+router.get("/", optionalAuth, getAllRoutes);
 
 
 // Get route by ID

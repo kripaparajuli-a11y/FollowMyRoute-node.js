@@ -6,30 +6,52 @@ import {
   FaLock,
   FaCheckCircle,
 } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
 
 function ForgotPassword() {
+  const { forgotPassword } = useAuth();
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [devResetLink, setDevResetLink] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!email.trim()) {
+    if (!email.trim()) return;
+
+    setLoading(true);
+    setError("");
+
+    const result = await forgotPassword(email.trim());
+
+    setLoading(false);
+
+    if (!result.success) {
+      setError(result.message);
       return;
+    }
+
+    // The backend currently returns the raw reset token directly since
+    // no email service is configured yet (see authController.js). In
+    // production this token would be emailed instead.
+    if (result.data?.resetToken) {
+      setDevResetLink(`/reset-password?token=${result.data.resetToken}`);
     }
 
     setSubmitted(true);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-paper">
 
       <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
 
         <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-xl lg:grid-cols-2">
 
           {/* ================= LEFT ================= */}
-          <div className="hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-10 lg:flex lg:flex-col lg:justify-between">
+          <div className="hidden bg-ink-950 p-10 lg:flex lg:flex-col lg:justify-between">
 
             <div>
 
@@ -39,19 +61,19 @@ function ForgotPassword() {
 
               <h1 className="mt-8 text-4xl font-extrabold leading-tight text-white">
                 Don't worry.
-                <span className="block text-blue-200">
+                <span className="block text-marigold-400">
                   We've got you.
                 </span>
               </h1>
 
-              <p className="mt-5 max-w-md leading-7 text-blue-100">
+              <p className="mt-5 max-w-md leading-7 text-paper-200">
                 Enter your email address and we'll help you get back into
                 your FollowMyRoute account.
               </p>
 
             </div>
 
-            <div className="text-sm text-blue-200">
+            <div className="text-sm text-marigold-400">
               FollowMyRoute · Travel smarter
             </div>
 
@@ -112,12 +134,16 @@ function ForgotPassword() {
 
                   </div>
 
+                  {error && (
+                    <p className="mt-3 text-sm font-medium text-red-600">{error}</p>
+                  )}
 
                   <button
                     type="submit"
-                    className="mt-6 w-full rounded-xl bg-blue-600 py-3.5 font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
+                    disabled={loading}
+                    className="mt-6 w-full rounded-xl bg-blue-600 py-3.5 font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:opacity-60"
                   >
-                    Send Reset Instructions
+                    {loading ? "Sending..." : "Send Reset Instructions"}
                   </button>
 
                 </form>
@@ -143,6 +169,17 @@ function ForgotPassword() {
                   </span>
                   , password reset instructions will be sent there.
                 </p>
+
+                {devResetLink && (
+                  <p className="mt-4 rounded-xl bg-amber-50 p-4 text-xs leading-5 text-amber-800">
+                    <strong>Dev mode:</strong> no email service is configured
+                    yet, so here's your reset link directly —{" "}
+                    <Link to={devResetLink} className="font-semibold underline">
+                      reset your password
+                    </Link>
+                    .
+                  </p>
+                )}
 
                 <Link
                   to="/login"

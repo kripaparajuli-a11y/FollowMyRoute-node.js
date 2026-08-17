@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { useAuth } from "../../context/AuthContext"
 import {
   FaBus,
   FaFacebookF,
@@ -10,6 +11,8 @@ import {
 } from "react-icons/fa"
 
 function Footer() {
+  const { isAuthenticated, logout } = useAuth()
+
   return (
     <footer className="bg-gray-950 text-white">
 
@@ -90,12 +93,6 @@ function Footer() {
                 Find a Route
               </Link>
 
-              <Link
-                to="/fares"
-                className="text-gray-400 hover:text-white transition"
-              >
-                Fare Guide
-              </Link>
 
               <Link
                 to="/about"
@@ -123,35 +120,39 @@ function Footer() {
             </h3>
 
             <div className="flex flex-col gap-3">
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/profile"
+                    className="text-gray-400 hover:text-white transition"
+                  >
+                    Profile
+                  </Link>
 
-              <Link
-                to="/login"
-                className="text-gray-400 hover:text-white transition"
-              >
-                Login
-              </Link>
+                  <button
+                    onClick={logout}
+                    className="w-fit text-left text-gray-400 transition hover:text-white"
+                  >
+                    Log out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="text-gray-400 hover:text-white transition"
+                  >
+                    Login
+                  </Link>
 
-              <Link
-                to="/register"
-                className="text-gray-400 hover:text-white transition"
-              >
-                Create Account
-              </Link>
-
-              <Link
-                to="/dashboard"
-                className="text-gray-400 hover:text-white transition"
-              >
-                Dashboard
-              </Link>
-
-              <Link
-                to="/profile"
-                className="text-gray-400 hover:text-white transition"
-              >
-                Profile
-              </Link>
-
+                  <Link
+                    to="/register"
+                    className="text-gray-400 hover:text-white transition"
+                  >
+                    Create Account
+                  </Link>
+                </>
+              )}
             </div>
 
           </div>

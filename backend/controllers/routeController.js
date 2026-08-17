@@ -2,7 +2,10 @@ const routeService = require("../services/routeService");
 
 const createRoute = async (req, res) => {
   try {
-    const route = await routeService.createRoute(req.body);
+    const route = await routeService.createRoute({
+      ...req.body,
+      createdBy: req.user.id,
+    });
 
     res.status(201).json({
       success: true,
@@ -19,7 +22,9 @@ const createRoute = async (req, res) => {
 
 const getAllRoutes = async (req, res) => {
   try {
-    const routes = await routeService.getAllRoutes();
+    const routes = await routeService.getAllRoutes({
+      includeInactive: req.user?.role === "admin",
+    });
 
     res.status(200).json({
       success: true,

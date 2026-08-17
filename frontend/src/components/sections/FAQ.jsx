@@ -37,22 +37,22 @@ function FAQ() {
   }
 
   return (
-    <section className="py-20 bg-white">
+    <section className="border-t border-ink-100 bg-paper-100 py-20">
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Heading */}
         <div className="text-center mb-12">
 
-          <p className="text-blue-600 font-semibold mb-2">
+          <p className="mb-2 text-sm font-bold uppercase tracking-wider text-micro-600">
             HAVE QUESTIONS?
           </p>
 
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+          <h2 className="font-display text-3xl font-semibold text-ink-900 sm:text-4xl">
             Frequently Asked Questions
           </h2>
 
-          <p className="text-gray-500 mt-4">
+          <p className="mt-4 text-ink-500">
             Find answers to some common questions about
             travelling with FollowMyRoute.
           </p>
@@ -68,26 +68,26 @@ function FAQ() {
             return (
               <div
                 key={item.question}
-                className="border border-gray-200 rounded-2xl overflow-hidden"
+                className="overflow-hidden rounded-xl border border-ink-100 bg-paper"
               >
 
                 <button
                   onClick={() => toggleQuestion(index)}
-                  className="w-full flex items-center justify-between gap-4 p-5 text-left hover:bg-gray-50 transition"
+                  className="flex w-full items-center justify-between gap-4 p-5 text-left transition hover:bg-micro-50"
                 >
 
-                  <span className="font-semibold text-gray-900">
+                  <span className="font-semibold text-ink-900">
                     {item.question}
                   </span>
 
-                  <span className="text-blue-600 shrink-0">
+                  <span className="shrink-0 text-micro-600">
                     {isOpen ? <FaMinus /> : <FaPlus />}
                   </span>
 
                 </button>
 
                 {isOpen && (
-                  <div className="px-5 pb-5 text-gray-500 leading-relaxed">
+                  <div className="px-5 pb-5 leading-relaxed text-ink-500">
                     {item.answer}
                   </div>
                 )}

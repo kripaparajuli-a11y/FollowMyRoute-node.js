@@ -1,236 +1,39 @@
-import { Link } from "react-router-dom";
-import {
-  FaBus,
-  FaMapMarkedAlt,
-  FaClock,
-  FaSearch,
-  FaArrowRight,
-} from "react-icons/fa";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { FaBus, FaMapMarkerAlt, FaMoneyBillWave, FaClock, FaRoute, FaSearch } from "react-icons/fa";
+import FAQ from "../components/sections/FAQ";
+
+const features = [
+  { icon: FaRoute, title: "Find the right route", text: "Search your starting point and destination to see available public vehicles." },
+  { icon: FaMapMarkerAlt, title: "Board with confidence", text: "Get useful route and stop information before you leave the house." },
+  { icon: FaMoneyBillWave, title: "Know the fare", text: "Compare standard and student fares for your journey." },
+];
 
 function Home() {
-  return (
-    <div className="bg-gray-50 min-h-screen">
+  const navigate = useNavigate();
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
-      {/* Hero Section */}
-      <section className="bg-linear-to-r from-blue-600 to-blue-800 text-white">
-        <div className="max-w-7xl mx-auto px-6 py-20">
+  function handleSearch(event) {
+    event.preventDefault();
+    if (from.trim() && to.trim()) navigate(`/routes?from=${encodeURIComponent(from.trim())}&to=${encodeURIComponent(to.trim())}`);
+  }
 
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-
-            {/* Left Side */}
-            <div>
-
-              <div className="inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full mb-6">
-                <FaBus />
-                <span className="text-sm">
-                  Your smart public transport guide
-                </span>
-              </div>
-
-              <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
-                Find Your Route.
-                <span className="block text-blue-200">
-                  Reach Your Destination.
-                </span>
-              </h1>
-
-              <p className="text-blue-100 text-lg mb-8 max-w-xl">
-                FollowMyRoute helps you discover bus routes, fares and
-                travel information quickly and easily.
-              </p>
-
-              <div className="flex flex-wrap gap-4">
-
-                <Link
-                  to="/routes"
-                  className="bg-white text-blue-700 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition flex items-center gap-2"
-                >
-                  Find a Route
-                  <FaArrowRight />
-                </Link>
-
-                <Link
-                  to="/fares"
-                  className="border border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white/10 transition"
-                >
-                  Check Fares
-                </Link>
-
-              </div>
-
-            </div>
-
-            {/* Right Side - Search Card */}
-            <div className="bg-white rounded-2xl shadow-2xl p-8 text-gray-900">
-
-              <div className="flex items-center gap-3 mb-6">
-
-                <div className="bg-blue-100 text-blue-600 p-3 rounded-lg">
-                  <FaSearch />
-                </div>
-
-                <div>
-                  <h2 className="text-xl font-bold">
-                    Plan Your Journey
-                  </h2>
-
-                  <p className="text-gray-500 text-sm">
-                    Find the best route for your trip
-                  </p>
-                </div>
-
-              </div>
-
-              <div className="space-y-4">
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    From
-                  </label>
-
-                  <input
-                    type="text"
-                    placeholder="Enter starting point"
-                    className="w-full border border-gray-200 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    To
-                  </label>
-
-                  <input
-                    type="text"
-                    placeholder="Enter destination"
-                    className="w-full border border-gray-200 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <Link
-                  to="/routes"
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition flex justify-center items-center gap-2"
-                >
-                  <FaSearch />
-                  Search Routes
-                </Link>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
-
-      {/* Features */}
-      <section className="max-w-7xl mx-auto px-6 py-16">
-
-        <div className="text-center mb-12">
-
-          <h2 className="text-3xl font-bold text-gray-900">
-            Everything You Need for Your Journey
-          </h2>
-
-          <p className="text-gray-500 mt-3">
-            Simple tools to make public transport easier.
-          </p>
-
-        </div>
-
-
-        <div className="grid md:grid-cols-3 gap-8">
-
-          {/* Card 1 */}
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-
-            <div className="bg-blue-100 text-blue-600 w-14 h-14 rounded-xl flex items-center justify-center text-2xl mb-5">
-              <FaMapMarkedAlt />
-            </div>
-
-            <h3 className="text-xl font-bold mb-3">
-              Find Routes
-            </h3>
-
-            <p className="text-gray-500">
-              Quickly find available bus routes and choose the
-              most convenient way to reach your destination.
-            </p>
-
-          </div>
-
-
-          {/* Card 2 */}
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-
-            <div className="bg-green-100 text-green-600 w-14 h-14 rounded-xl flex items-center justify-center text-2xl mb-5">
-              <FaClock />
-            </div>
-
-            <h3 className="text-xl font-bold mb-3">
-              Save Time
-            </h3>
-
-            <p className="text-gray-500">
-              Get useful travel information so you can plan your
-              journey before leaving home.
-            </p>
-
-          </div>
-
-
-          {/* Card 3 */}
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-
-            <div className="bg-purple-100 text-purple-600 w-14 h-14 rounded-xl flex items-center justify-center text-2xl mb-5">
-              <FaBus />
-            </div>
-
-            <h3 className="text-xl font-bold mb-3">
-              Know Your Fare
-            </h3>
-
-            <p className="text-gray-500">
-              Check transportation fares and understand your
-              expected travel cost before your journey.
-            </p>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      {/* CTA */}
-      <section className="max-w-7xl mx-auto px-6 pb-16">
-
-        <div className="bg-blue-600 rounded-2xl p-10 text-center text-white">
-
-          <h2 className="text-3xl font-bold mb-4">
-            Ready to plan your journey?
-          </h2>
-
-          <p className="text-blue-100 mb-6">
-            Explore routes and find your way around with FollowMyRoute.
-          </p>
-
-          <Link
-            to="/routes"
-            className="inline-flex items-center gap-2 bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition"
-          >
-            Explore Routes
-            <FaArrowRight />
-          </Link>
-
-        </div>
-
-      </section>
-
-    </div>
-  );
+  return <div className="bg-paper text-ink-900">
+    <div className="border-b border-marigold-100 bg-marigold-50 px-4 py-2 text-center text-xs font-semibold text-marigold-700">🚌 Commuter tip: carry your student ID to claim your fare discount.</div>
+    <header className="relative overflow-hidden bg-ink-950">
+      <div className="hero-orb hero-orb-one" /><div className="hero-orb hero-orb-two" /><div className="hero-grid" />
+      <div className="relative mx-auto max-w-6xl px-4 pb-20 pt-16 text-center sm:px-6 sm:pb-28 sm:pt-24">
+        <span className="inline-flex items-center gap-2 rounded-full border border-marigold-500/30 bg-marigold-500/15 px-3 py-1 text-xs font-bold text-marigold-400"><FaMapMarkerAlt /> Made for Kathmandu Valley commuters</span>
+        <h1 className="mx-auto mt-6 max-w-4xl font-display text-4xl font-semibold leading-tight text-paper-100 sm:text-5xl lg:text-6xl">Never guess your <span className="text-marigold-400">local bus route</span> again.</h1>
+        <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-paper-200/80">Find real routes, useful journey details, and expected fares before you leave home.</p>
+        <div className="mt-9 flex justify-center"><Link to="/routes" className="rounded-lg bg-marigold-500 px-6 py-3 font-semibold text-ink-950 transition hover:bg-marigold-400">Find a route</Link></div>
+      </div>
+    </header>
+    <section className="bg-gradient-to-b from-micro-50 to-paper py-16 sm:py-20"><div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-12"><div className="text-center lg:col-span-5 lg:text-left"><p className="mb-3 text-sm font-bold uppercase tracking-wider text-micro-700">Plan your journey</p><h2 className="font-display text-3xl font-semibold sm:text-4xl">Try it right now</h2><p className="mt-4 leading-7 text-ink-500">Pick your starting point and destination. We’ll look for the best available journey in the live route data.</p></div><form onSubmit={handleSearch} className="ticket-stub mx-auto w-full max-w-lg space-y-4 bg-paper-100 p-6 shadow-card sm:p-8 lg:col-span-7"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-micro-50 text-micro-700"><FaSearch /></span><div><h3 className="font-display text-xl font-semibold">Find your route</h3><p className="text-sm text-ink-500">Search available vehicles</p></div></div><label className="block text-sm font-semibold text-ink-700">Current location<span className="relative mt-2 block"><FaMapMarkerAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-micro-600" /><input value={from} onChange={(e) => setFrom(e.target.value)} required placeholder="Type a place, e.g. Thimi" className="w-full rounded-lg border border-ink-100 bg-paper px-4 py-3 pl-11 text-ink-900 outline-none transition focus:border-micro-600 focus:ring-2 focus:ring-micro-100" /></span></label><label className="block text-sm font-semibold text-ink-700">Destination<span className="relative mt-2 block"><FaMapMarkerAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-brick-600" /><input value={to} onChange={(e) => setTo(e.target.value)} required placeholder="Type a place, e.g. Baneshwor" className="w-full rounded-lg border border-ink-100 bg-paper px-4 py-3 pl-11 text-ink-900 outline-none transition focus:border-micro-600 focus:ring-2 focus:ring-micro-100" /></span></label><button className="w-full rounded-lg bg-micro-600 py-3 font-semibold text-white transition hover:bg-micro-700">Search available vehicles</button></form></div></section>
+    <section className="border-y border-ink-100 bg-paper-100 py-20"><div className="mx-auto max-w-6xl px-4 sm:px-6"><div className="mx-auto mb-12 max-w-2xl text-center"><h2 className="font-display text-3xl font-semibold sm:text-4xl">Designed for daily utility</h2><p className="mt-4 text-ink-500">Straightforward commuter information when you need it.</p></div><div className="grid gap-6 md:grid-cols-3">{features.map(({ icon: Icon, title, text }) => <article key={title} className="rounded-2xl border border-ink-100 bg-paper p-6 transition hover:-translate-y-1 hover:border-micro-600/30 hover:shadow-card"><span className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-micro-50 text-xl text-micro-700"><Icon /></span><h3 className="font-display text-xl font-semibold">{title}</h3><p className="mt-3 text-sm leading-6 text-ink-500">{text}</p></article>)}</div></div></section>
+    <section className="bg-paper py-20"><div className="mx-auto max-w-5xl px-4 sm:px-6"><div className="text-center"><h2 className="font-display text-3xl font-semibold sm:text-4xl">Kilometre-based fare guide</h2><p className="mx-auto mt-4 max-w-2xl text-ink-500">Use this simple distance guide to estimate your public-transport fare before you board.</p></div><div className="mt-10 overflow-hidden rounded-2xl border border-ink-100 bg-paper-100 shadow-card"><table className="w-full text-left text-sm"><thead className="bg-ink-900 text-paper-100"><tr><th className="px-5 py-4 font-semibold">Distance travelled</th><th className="px-5 py-4 text-right font-semibold">Regular fare</th><th className="px-5 py-4 text-right font-semibold">Student fare</th></tr></thead><tbody className="divide-y divide-ink-100"><tr><td className="px-5 py-4 font-medium">Up to 5 km</td><td className="px-5 py-4 text-right">Rs. 24</td><td className="px-5 py-4 text-right font-semibold text-marigold-700">Rs. 13</td></tr><tr><td className="px-5 py-4 font-medium">Up to 10 km</td><td className="px-5 py-4 text-right">Rs. 33</td><td className="px-5 py-4 text-right font-semibold text-marigold-700">Rs. 18</td></tr><tr><td className="px-5 py-4 font-medium">Up to 15 km</td><td className="px-5 py-4 text-right">Rs. 39</td><td className="px-5 py-4 text-right font-semibold text-marigold-700">Rs. 21</td></tr><tr><td className="px-5 py-4 font-medium">Up to 20 km</td><td className="px-5 py-4 text-right">Rs. 44</td><td className="px-5 py-4 text-right font-semibold text-marigold-700">Rs. 24</td></tr><tr><td className="px-5 py-4 font-medium">Above 20 km</td><td className="px-5 py-4 text-right">Rs. 50</td><td className="px-5 py-4 text-right font-semibold text-marigold-700">Rs. 28</td></tr></tbody></table></div><p className="mt-4 text-center text-xs text-ink-500">Student fares require a valid ID. Actual fares may vary by operator and route.</p><div className="mt-8 grid gap-4 sm:grid-cols-3"><div className="rounded-2xl border border-ink-100 bg-paper-100 p-5 text-center"><FaClock className="mx-auto text-marigold-500" /><p className="mt-3 font-semibold">Plan ahead</p></div><div className="rounded-2xl border border-ink-100 bg-paper-100 p-5 text-center"><FaBus className="mx-auto text-micro-600" /><p className="mt-3 font-semibold">Choose your ride</p></div><div className="rounded-2xl bg-ink-900 p-5 text-center text-paper-100"><FaMoneyBillWave className="mx-auto text-marigold-400" /><p className="mt-3 font-semibold">Carry exact change when possible</p></div></div></div></section>
+    <FAQ />
+  </div>;
 }
-
 export default Home;

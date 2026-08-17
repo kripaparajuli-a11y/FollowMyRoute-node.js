@@ -6,6 +6,7 @@ import {
   FaPaperPlane,
   FaCheckCircle,
 } from "react-icons/fa";
+import api from "../services/api";
 
 function Contact() {
   const [form, setForm] = useState({
@@ -15,6 +16,8 @@ function Contact() {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setForm({
@@ -23,49 +26,53 @@ function Contact() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!form.name || !form.email || !form.message) {
       return;
     }
 
-    setSubmitted(true);
-
-    setForm({
-      name: "",
-      email: "",
-      message: "",
-    });
+    try {
+      setSending(true);
+      setError("");
+      await api.post("/contact-messages", form);
+      setSubmitted(true);
+      setForm({ name: "", email: "", message: "" });
+    } catch (err) {
+      setError(err.response?.data?.message || "Unable to send your message. Please try again.");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-paper">
 
       {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
+      <section className="relative overflow-hidden bg-ink-950">
 
-        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10" />
-
-        <div className="absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-white/5" />
+        <div className="hero-orb hero-orb-one" />
+        <div className="hero-orb hero-orb-two" />
+        <div className="hero-grid" />
 
         <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
 
           <div className="max-w-3xl">
 
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-marigold-500/30 bg-marigold-500/15 px-4 py-2 text-sm font-medium text-marigold-400">
               <FaEnvelope />
               Get in touch
             </div>
 
             <h1 className="text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
               We're here to
-              <span className="block text-blue-200">
+              <span className="block text-marigold-400">
                 help you.
               </span>
             </h1>
 
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-blue-100">
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-paper-200">
               Have a question, suggestion or feedback about FollowMyRoute?
               Send us a message and let us know.
             </p>
@@ -183,6 +190,8 @@ function Contact() {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
 
+                  {error && <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">{error}</p>}
+
                   {/* NAME */}
                   <div>
 
@@ -245,10 +254,11 @@ function Contact() {
 
                   <button
                     type="submit"
+                    disabled={sending}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 font-semibold text-white shadow-lg shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-blue-700"
                   >
                     <FaPaperPlane />
-                    Send Message
+                    {sending ? "Sending..." : "Send Message"}
                   </button>
 
                 </form>
@@ -256,7 +266,7 @@ function Contact() {
 
             ) : (
 
-              <div className="flex min-h-[450px] flex-col items-center justify-center text-center">
+              <div className="flex min-h-112.5 flex-col items-center justify-center text-center">
 
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-50 text-green-600">
                   <FaCheckCircle className="text-3xl" />

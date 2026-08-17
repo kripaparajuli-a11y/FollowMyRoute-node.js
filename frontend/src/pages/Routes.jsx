@@ -1,192 +1,212 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useNavigationType, useSearchParams } from "react-router-dom";
 import {
-  FaBus,
   FaSearch,
-  FaArrowRight,
   FaExchangeAlt,
-  FaClock,
-  FaMoneyBillWave,
   FaMapMarkerAlt,
   FaRoute,
   FaExclamationCircle,
+  FaBus,
 } from "react-icons/fa";
+import api from "../services/api";
+import TripResultCard from "../components/trip/TripResultCard";
 
 function RoutesPage() {
-  const [routes, setRoutes] = useState([]);
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigationType = useNavigationType();
+  const isPageReload = useRef(
+    navigationType !== "PUSH" &&
+      window.location.pathname === "/routes" &&
+      performance.getEntriesByType("navigation")[0]?.type === "reload"
+  );
+
+  const [from, setFrom] = useState(isPageReload.current ? "" : searchParams.get("from") || "");
+  const [to, setTo] = useState(isPageReload.current ? "" : searchParams.get("to") || "");
+  const [fareType, setFareType] = useState("standard");
+
   const [searched, setSearched] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [result, setResult] = useState(null); // { type, options }
 
-  // ============================
-  // GET ROUTES FROM BACKEND
-  // ============================
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [activeLocationField, setActiveLocationField] = useState(null);
+  const [availableRoutes, setAvailableRoutes] = useState([]);
+  const [catalogError, setCatalogError] = useState("");
+
+  // A browser refresh starts a new search, while in-app navigation from the
+  // dashboard or home page can still pass pre-filled locations in the URL.
   useEffect(() => {
-    const fetchRoutes = async () => {
-      try {
-        setLoading(true);
-        setError("");
+    if (isPageReload.current) {
+      setSearchParams({}, { replace: true });
+    }
+  }, [setSearchParams]);
 
-        const response = await axios.get(
-          "http://localhost:5000/api/routes"
-        );
-
-        if (response.data.success) {
-          setRoutes(response.data.data);
-        }
-      } catch (err) {
-        console.error("Error fetching routes:", err);
-
-        setError(
-          "Unable to load routes. Please make sure the backend server is running."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRoutes();
+  // ============================
+  // AUTOCOMPLETE (best-effort — silently does nothing if it fails)
+  // ============================
+  const loadLocations = useCallback(() => {
+    api
+      .get("/locations")
+      .then((res) => {
+        const names = (res.data.data || [])
+          .map((location) => location.name)
+          .sort((a, b) => a.localeCompare(b));
+        setLocationSuggestions(names);
+      })
+      .catch(() => setLocationSuggestions([]));
   }, []);
 
+  useEffect(() => {
+    loadLocations();
+  }, [loadLocations]);
+
+  const matchingLocations = (value) => {
+    const query = value.trim().toLowerCase();
+    return locationSuggestions.filter((name) => name.toLowerCase().includes(query));
+  };
+
+  const selectLocation = (field, name) => {
+    if (field === "from") setFrom(name);
+    if (field === "to") setTo(name);
+    setActiveLocationField(null);
+  };
+
+  // This catalogue is intentionally loaded from the API. The server returns
+  // only active routes to guests/users, so entries created or activated by an
+  // admin appear here automatically and inactive routes never do.
+  useEffect(() => {
+    api
+      .get("/routes")
+      .then((res) => setAvailableRoutes(res.data.data || []))
+      .catch(() => setCatalogError("Route list is unavailable right now."));
+  }, []);
 
   // ============================
   // SEARCH
   // ============================
+  const runSearch = useCallback(async (fromValue, toValue, fareTypeValue) => {
+    if (!fromValue.trim() || !toValue.trim()) return;
+
+    try {
+      setLoading(true);
+      setError("");
+      setSearched(true);
+
+      const response = await api.get("/trips/search", {
+        params: { from: fromValue.trim(), to: toValue.trim(), fareType: fareTypeValue },
+      });
+
+      setResult(response.data);
+    } catch (err) {
+      console.error("Trip search failed:", err);
+      setError(
+        err.response?.data?.message ||
+          "Unable to search right now. Please make sure the backend server is running."
+      );
+      setResult(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Run a search automatically if the page loaded with ?from=&to= in the URL
+  useEffect(() => {
+    const f = searchParams.get("from");
+    const t = searchParams.get("to");
+
+    if (!isPageReload.current && f && t) {
+      runSearch(f, t, fareType);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleSearch = (e) => {
     e.preventDefault();
-    setSearched(true);
+    setSearchParams({ from, to });
+    runSearch(from, to, fareType);
   };
 
-
-  // ============================
-  // SWAP LOCATIONS
-  // ============================
   const handleSwap = () => {
     setFrom(to);
     setTo(from);
   };
 
-
-  // ============================
-  // FILTER ROUTES
-  // ============================
-  const filteredRoutes = routes.filter((route) => {
-    const fromValue = from.trim().toLowerCase();
-    const toValue = to.trim().toLowerCase();
-
-    if (!fromValue && !toValue) {
-      return true;
-    }
-
-    const matchesFrom =
-      !fromValue ||
-      route.startPoint.toLowerCase().includes(fromValue) ||
-      route.stops.some((stop) =>
-        stop.toLowerCase().includes(fromValue)
-      );
-
-    const matchesTo =
-      !toValue ||
-      route.destination.toLowerCase().includes(toValue) ||
-      route.stops.some((stop) =>
-        stop.toLowerCase().includes(toValue)
-      );
-
-    return matchesFrom && matchesTo;
-  });
-
-
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-paper">
 
       {/* ================= HERO ================= */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
-
-        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10" />
-
-        <div className="absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-white/5" />
+      <section className="relative overflow-hidden bg-ink-950">
+        <div className="hero-orb hero-orb-one" />
+        <div className="hero-orb hero-orb-two" />
+        <div className="hero-grid" />
 
         <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-
           <div className="max-w-3xl">
-
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-marigold-500/30 bg-marigold-500/15 px-4 py-2 text-sm font-semibold text-marigold-400">
               <FaRoute />
               Smart public transport
             </div>
 
-            <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Find the right route.
-              <span className="block text-blue-200">
-                Get there with ease.
-              </span>
+            <h1 className="font-display text-4xl font-semibold leading-tight tracking-tight text-paper-100 sm:text-5xl lg:text-6xl">
+              Where are you,
+              <span className="block text-marigold-400">and where to?</span>
             </h1>
 
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-blue-100 sm:text-xl">
-              Search bus routes, compare travel times and check fares
-              before you start your journey.
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-paper-200 sm:text-xl">
+              Tell us your starting point and destination — we'll tell you
+              which vehicle to take, where to board, and where to change if
+              you need to.
             </p>
-
           </div>
-
         </div>
-
       </section>
-
 
       {/* ================= SEARCH ================= */}
       <section className="relative z-10 mx-auto -mt-10 max-w-6xl px-4 sm:px-6 lg:px-8">
-
-        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-xl shadow-slate-200/60 sm:p-8">
-
-          <div className="mb-7 flex items-center gap-4">
-
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-              <FaSearch className="text-xl" />
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">
-                Plan your journey
-              </h2>
-
-              <p className="text-sm text-slate-500">
-                Enter your starting point and destination
-              </p>
-            </div>
-
-          </div>
-
+        <div className="ticket-stub rounded-2xl border-ink-100 bg-paper-100 p-6 shadow-card sm:p-8">
 
           <form onSubmit={handleSearch}>
-
             <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr_auto] md:items-end">
 
               {/* FROM */}
               <div>
-
-                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  From
-                </label>
-
+                <label className="mb-2 block text-sm font-semibold text-slate-700">From</label>
                 <div className="relative">
-
                   <FaMapMarkerAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500" />
-
                   <input
                     type="text"
                     value={from}
                     onChange={(e) => setFrom(e.target.value)}
-                    placeholder="Starting point"
+                    onFocus={() => {
+                      loadLocations();
+                      setActiveLocationField("from");
+                    }}
+                    onBlur={() => setActiveLocationField(null)}
+                    autoComplete="off"
+                    placeholder="Where are you?"
+                    required
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-4 text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
                   />
-
+                  {activeLocationField === "from" && matchingLocations(from).length > 0 && (
+                    <div className="absolute z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-ink-100 bg-paper-100 p-1 shadow-card">
+                      {matchingLocations(from).map((name) => (
+                        <button
+                          key={name}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            selectLocation("from", name);
+                          }}
+                          className="w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium text-ink-700 transition hover:bg-micro-50 hover:text-micro-700"
+                        >
+                          {name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-
               </div>
-
 
               {/* SWAP */}
               <button
@@ -198,379 +218,178 @@ function RoutesPage() {
                 <FaExchangeAlt />
               </button>
 
-
               {/* TO */}
               <div>
-
-                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  To
-                </label>
-
+                <label className="mb-2 block text-sm font-semibold text-slate-700">To</label>
                 <div className="relative">
-
                   <FaMapMarkerAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500" />
-
                   <input
                     type="text"
                     value={to}
                     onChange={(e) => setTo(e.target.value)}
-                    placeholder="Destination"
+                    onFocus={() => {
+                      loadLocations();
+                      setActiveLocationField("to");
+                    }}
+                    onBlur={() => setActiveLocationField(null)}
+                    autoComplete="off"
+                    placeholder="Where do you want to go?"
+                    required
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-4 text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
                   />
-
+                  {activeLocationField === "to" && matchingLocations(to).length > 0 && (
+                    <div className="absolute z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-ink-100 bg-paper-100 p-1 shadow-card">
+                      {matchingLocations(to).map((name) => (
+                        <button
+                          key={name}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            selectLocation("to", name);
+                          }}
+                          className="w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium text-ink-700 transition hover:bg-micro-50 hover:text-micro-700"
+                        >
+                          {name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-
               </div>
-
 
               {/* SEARCH */}
               <button
                 type="submit"
-                className="flex h-[54px] items-center justify-center gap-2 rounded-xl bg-blue-600 px-7 font-semibold text-white shadow-lg shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-blue-700"
+                className="flex h-13.5 items-center justify-center gap-2 rounded-lg bg-micro-600 px-7 font-semibold text-white transition hover:bg-micro-700"
               >
                 <FaSearch />
                 Search
               </button>
-
             </div>
 
+            {/* Fare type toggle */}
+            <div className="mt-4 flex items-center gap-3 text-sm">
+              <span className="font-medium text-slate-600">Fare type:</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setFareType("standard");
+                  if (from.trim() && to.trim()) runSearch(from, to, "standard");
+                }}
+                className={`rounded-full px-4 py-1.5 font-semibold transition ${
+                  fareType === "standard"
+                    ? "bg-micro-600 text-white"
+                    : "bg-ink-50 text-ink-500 hover:bg-micro-50"
+                }`}
+              >
+                Standard
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFareType("student");
+                  if (from.trim() && to.trim()) runSearch(from, to, "student");
+                }}
+                className={`rounded-full px-4 py-1.5 font-semibold transition ${
+                  fareType === "student"
+                    ? "bg-micro-600 text-white"
+                    : "bg-ink-50 text-ink-500 hover:bg-micro-50"
+                }`}
+              >
+                Student
+              </button>
+            </div>
           </form>
-
         </div>
-
       </section>
 
+      {/* ================= RESULTS ================= */}
+      <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
 
-      {/* ================= ROUTES ================= */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-
-        <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-
-          <div>
-
-            <p className="mb-2 text-sm font-bold uppercase tracking-wider text-blue-600">
-              Available routes
-            </p>
-
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
-              Explore bus routes
-            </h2>
-
-            <p className="mt-2 text-slate-500">
-              Choose a route that works best for your journey.
-            </p>
-
-          </div>
-
-          {!loading && !error && (
-            <div className="rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
-              {filteredRoutes.length}{" "}
-              {filteredRoutes.length === 1 ? "route" : "routes"} available
+        {!searched && !loading && !error && (
+          <div className="mb-10">
+            <div className="mb-5">
+              <p className="text-sm font-bold uppercase tracking-wider text-micro-600">Admin-managed routes</p>
+              <h2 className="mt-1 font-display text-3xl font-semibold text-ink-900">Available routes</h2>
+              <p className="mt-2 text-ink-500">These routes are published by the administrator. Search above to plan a trip between their stops.</p>
             </div>
-          )}
-
-        </div>
-
-
-        {/* SEARCH INFORMATION */}
-        {searched && (
-          <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800">
-
-            <span className="font-semibold">
-              Search results
-            </span>
-
-            {from && (
-              <>
-                {" "}from <strong>{from}</strong>
-              </>
+            {catalogError ? (
+              <p className="rounded-xl border border-brick-600/20 bg-marigold-50 p-4 text-sm text-brick-600">{catalogError}</p>
+            ) : availableRoutes.length === 0 ? (
+              <div className="ticket-stub bg-paper-100 p-8 text-center"><FaBus className="mx-auto text-3xl text-ink-300" /><p className="mt-3 font-semibold text-ink-900">No published routes yet</p><p className="mt-1 text-sm text-ink-500">An administrator can add and activate routes from the Admin panel.</p></div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {availableRoutes.map((route) => (
+                  <article key={route._id} className="ticket-stub bg-paper-100 p-5">
+                    <div className="flex items-start justify-between gap-3"><div><span className="inline-flex rounded-md bg-micro-600 px-2.5 py-1 text-xs font-bold text-white">{route.routeNumber}</span><h3 className="mt-3 font-display text-lg font-semibold text-ink-900">{route.name}</h3></div><span className="text-sm font-semibold text-marigold-700">Rs. {route.standardFare}</span></div>
+                    <p className="mt-3 text-sm text-ink-500">{route.startPoint} <span className="px-1 text-ink-300">→</span> {route.destination}</p>
+                    <div className="mt-4 flex items-center justify-between border-t border-dashed border-ink-100 pt-3 text-xs text-ink-500"><span>{route.vehicleType?.name || "Public vehicle"}</span><span>{route.estimatedTime}</span></div>
+                  </article>
+                ))}
+              </div>
             )}
-
-            {to && (
-              <>
-                {" "}to <strong>{to}</strong>
-              </>
-            )}
-
-            {!from && !to && " — showing all available routes"}
-
           </div>
         )}
 
+        {!searched && (
+          <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
+            <FaBus className="mx-auto text-4xl text-slate-300" />
+            <h3 className="mt-5 text-xl font-bold text-slate-900">
+              Enter a starting point and destination
+            </h3>
+            <p className="mt-2 text-slate-500">
+              We'll find the best direct route, or the best route with one
+              transfer if a direct one isn't available.
+            </p>
+          </div>
+        )}
 
-        {/* LOADING */}
         {loading && (
           <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center shadow-sm">
-
             <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
-
-            <p className="mt-5 font-semibold text-slate-700">
-              Loading routes...
-            </p>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Getting the latest routes from the server.
-            </p>
-
+            <p className="mt-5 font-semibold text-slate-700">Finding your route...</p>
           </div>
         )}
 
-
-        {/* ERROR */}
         {!loading && error && (
           <div className="rounded-3xl border border-red-100 bg-red-50 p-8 text-center">
-
             <FaExclamationCircle className="mx-auto text-3xl text-red-500" />
-
-            <h3 className="mt-4 text-lg font-bold text-red-900">
-              Unable to load routes
-            </h3>
-
-            <p className="mt-2 text-sm text-red-700">
-              {error}
-            </p>
-
+            <h3 className="mt-4 text-lg font-bold text-red-900">Something went wrong</h3>
+            <p className="mt-2 text-sm text-red-700">{error}</p>
           </div>
         )}
 
-
-        {/* NO RESULTS */}
-        {!loading && !error && filteredRoutes.length === 0 && (
+        {!loading && !error && searched && result?.type === "none" && (
           <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center shadow-sm">
-
             <FaRoute className="mx-auto text-4xl text-slate-300" />
-
-            <h3 className="mt-5 text-xl font-bold text-slate-900">
-              No routes found
-            </h3>
-
+            <h3 className="mt-5 text-xl font-bold text-slate-900">No route found</h3>
             <p className="mt-2 text-slate-500">
-              Try a different starting point or destination.
+              We couldn't find a direct or one-transfer route between these
+              two places yet. Try checking your spelling, or a nearby
+              landmark.
             </p>
-
-            <button
-              onClick={() => {
-                setFrom("");
-                setTo("");
-                setSearched(false);
-              }}
-              className="mt-5 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
-            >
-              Show all routes
-            </button>
-
           </div>
         )}
 
-
-        {/* ROUTE CARDS */}
-        {!loading && !error && filteredRoutes.length > 0 && (
-          <div className="grid gap-6 md:grid-cols-2">
-
-            {filteredRoutes.map((route) => (
-
-              <div
-                key={route._id}
-                className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-100/50"
-              >
-
-                {/* CARD TOP */}
-                <div className="flex items-start justify-between">
-
-                  <div className="flex items-center gap-4">
-
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-200">
-                      <FaBus className="text-xl" />
-                    </div>
-
-                    <div>
-
-                      <p className="text-sm font-medium text-slate-500">
-                        Bus Route {route.routeNumber}
-                      </p>
-
-                      <h3 className="text-lg font-bold text-slate-900">
-                        {route.name}
-                      </h3>
-
-                    </div>
-
-                  </div>
-
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      route.isActive
-                        ? "bg-green-50 text-green-600"
-                        : "bg-red-50 text-red-600"
-                    }`}
-                  >
-                    {route.isActive ? "Available" : "Inactive"}
-                  </span>
-
-                </div>
-
-
-                {/* JOURNEY */}
-                <div className="my-7 rounded-2xl bg-slate-50 p-5">
-
-                  <div className="flex items-center gap-4">
-
-                    <div className="flex flex-col items-center">
-
-                      <div className="h-3 w-3 rounded-full border-2 border-blue-600 bg-white" />
-
-                      <div className="h-10 w-px bg-slate-300" />
-
-                      <div className="h-3 w-3 rounded-full bg-blue-600" />
-
-                    </div>
-
-
-                    <div className="flex flex-1 flex-col gap-6">
-
-                      <div>
-
-                        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                          Starting point
-                        </p>
-
-                        <p className="font-semibold text-slate-800">
-                          {route.startPoint}
-                        </p>
-
-                      </div>
-
-
-                      <div>
-
-                        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                          Destination
-                        </p>
-
-                        <p className="font-semibold text-slate-800">
-                          {route.destination}
-                        </p>
-
-                      </div>
-
-                    </div>
-
-                    <FaArrowRight className="hidden text-slate-300 sm:block" />
-
-                  </div>
-
-                </div>
-
-
-                {/* INFORMATION */}
-                <div className="grid grid-cols-3 gap-3 border-b border-slate-100 pb-5">
-
-                  <div className="text-center">
-
-                    <FaClock className="mx-auto mb-2 text-blue-500" />
-
-                    <p className="text-xs text-slate-400">
-                      Duration
-                    </p>
-
-                    <p className="mt-1 text-sm font-bold text-slate-800">
-                      {route.estimatedTime}
-                    </p>
-
-                  </div>
-
-
-                  <div className="border-x border-slate-100 text-center">
-
-                    <FaMoneyBillWave className="mx-auto mb-2 text-green-500" />
-
-                    <p className="text-xs text-slate-400">
-                      Fare
-                    </p>
-
-                    <p className="mt-1 text-sm font-bold text-slate-800">
-                      Rs. {route.fare}
-                    </p>
-
-                  </div>
-
-
-                  <div className="text-center">
-
-                    <FaRoute className="mx-auto mb-2 text-purple-500" />
-
-                    <p className="text-xs text-slate-400">
-                      Stops
-                    </p>
-
-                    <p className="mt-1 text-sm font-bold text-slate-800">
-                      {route.stops.length}
-                    </p>
-
-                  </div>
-
-                </div>
-
-
-                {/* STOPS */}
-                <div className="mt-5">
-
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                    Stops
-                  </p>
-
-                  <div className="flex flex-wrap gap-2">
-
-                    {route.stops.map((stop, index) => (
-
-                      <span
-                        key={`${route._id}-${index}`}
-                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600"
-                      >
-                        {stop}
-                      </span>
-
-                    ))}
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            ))}
-
-          </div>
-        )}
-
-      </section>
-
-
-      {/* ================= CTA ================= */}
-      <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-12 text-center sm:px-12">
-
-          <div className="relative z-10">
-
-            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 text-white backdrop-blur-sm">
-              <FaBus className="text-2xl" />
+        {!loading && !error && result && result.options?.length > 0 && (
+          <div>
+            <div className="mb-6">
+              <p className="text-sm font-bold uppercase tracking-wider text-blue-600">
+                {result.type === "direct" ? "Direct routes" : "Best route with a transfer"}
+              </p>
+              <h2 className="mt-1 text-2xl font-extrabold text-slate-900">
+                {from} → {to}
+              </h2>
             </div>
 
-            <h2 className="text-3xl font-extrabold text-white">
-              Ready for your next journey?
-            </h2>
-
-            <p className="mx-auto mt-3 max-w-xl text-blue-100">
-              Find your route, check the fare and travel with confidence.
-            </p>
-
+            <div className="space-y-5">
+              {result.options.map((option, i) => (
+                <TripResultCard key={i} option={option} />
+              ))}
+            </div>
           </div>
-
-        </div>
-
+        )}
       </section>
-
     </div>
   );
 }

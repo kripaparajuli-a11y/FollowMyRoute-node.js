@@ -38,6 +38,29 @@ const protect = (req, res, next) => {
   }
 };
 
+// Like `protect`, but doesn't reject the request if there's no/invalid
+// token — just leaves req.user unset. Useful for endpoints (like trip
+// search) that behave the same for guests but personalize for logged-in
+// users.
+const optionalAuth = (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return next();
+    }
+
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    req.user = decoded;
+  } catch (error) {
+    // invalid/expired token — treat as guest rather than failing
+  }
+
+  next();
+};
+
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
@@ -53,5 +76,6 @@ const authorize = (...roles) => {
 
 module.exports = {
   protect,
+  optionalAuth,
   authorize,
 };
